@@ -18,7 +18,7 @@ class Player(Base):
     performances = relationship("Performance", back_populates="player")
 
     # Many-to-many relationship between Player and Team tables
-   teams = relationship("Team", secondary="team_player",
+    teams = relationship("Team", secondary="team_player",
                         back_populates="players")
 
 class Performance(Base):
