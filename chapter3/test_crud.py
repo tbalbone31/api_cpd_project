@@ -39,10 +39,46 @@ def test_get_all_performances(db_session):
 
 def test_get_new_performances(db_session):
     """Tests that the count of performances in the database is what is expected"""
-    performances = crud.get_performances(db_session, skip=0, limit=18000, min_last_changed_date=test_date)
+    performances = crud.get_performances(db_session, skip=0, limit=10000, min_last_changed_date=test_date)
+    asset len(performances) == 2711
+
+def test_get_league(db_session):
+    """Tests that you can get a league by id"""
+    league = crud.get_league(db_session, league_id=5001)
+    assert league.league_id == 5001
+    assert len(league.teams) == 12
+
+def test_get_leagues(db_session):
+    """Tests that you can get all leagues"""
+    leagues = crud.get_leagues(db_session, skip=0, min_last_changed_date=test_date)
+    assert len(leagues) == 5
+
+def test_get_teams(db_session):
+    """Tests that you can get all teams"""
+    teams = crud.get_teams(db_session, skip=0, min_last_changed_date=test_date)
+    assert len(teams) == 20
+
+def test_get_teams_for_one_league(db_session):
+    """Tests that you can get all teams for a specific league"""
+    teams = crud.get_teams(db_session, skip=0, league_id=5001)
+    assert len(teams) == 12
+
+def test_get_team_by_name(db_session):
+    """Tests that you can get a team by name"""
+    team = crud.get_team(db_session, team_name="Roaring Kitties")
+    assert len(team) == 1
+    assert team[0].team_id == 1001
+
 
 # test the count functions
 def test_get_player_count(db_session):
     player_count = crud.get_player_count(db_session)
     assert player_count == 1018
 
+def test_get_team_count(db_session):
+    team_count = crud.get_team_count(db_session)
+    assert team_count == 20
+
+def test_get_league_count(db_session):
+    league_count = crud.get_league_count(db_session)
+    assert league_count == 5
