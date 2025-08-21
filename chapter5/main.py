@@ -6,7 +6,33 @@ from datetime import date
 import crud, schemas
 from database import SessionLocal
 
-app = FastAPI()
+api_description = """
+This API provides read-only access to info from the SportsWorldCentral
+(SWC) Fantasy Football API.
+The endpoints are grouped into the following categories:
+
+## Analytics
+Get information about the health of the API and counts of leagues, teams,
+and players.
+
+## Player
+You can get a list of NFL players, or search for an individual player by
+player_id.
+
+## Scoring
+You can get a list of NFL player performances, including the fantasy points
+they scored using SWC league scoring.
+
+## Membership
+Get information about all the SWC fantasy football leagues and the teams in them.
+"""
+
+#FastAPI constructor with additional details added for OpenAPI Specification
+app = FastAPI(
+    description=api_description
+    title="Sports World Central (SWC) Fantasy Football API",
+    version="0.1"
+)
 
 # Dependency
 def get_db():
@@ -16,16 +42,21 @@ def get_db():
     finally:
         db.close()
 
-@app.get("/")
+@app.get("/",tags=["analytics"])
 async def root():
     return {"message": "API health check successful"}
 
 
-@app.get("/v0/players/", response_model=list[schemas.Player])
-def read_players(skip: int = 0, 
-                 limit: int = 100, 
-                 minimum_last_changed_date: date = None, 
-                 first_name: str = None, 
+@app.get("/v0/players/",
+         response_model=list[schemas.Player],
+         tags=["player"],
+         summary="Get a list of NFL players",
+         description="Retrieve a list of NFL players with optional filtering by various parameters.",
+         operation_id="v0_get_players")
+def read_players(skip: int = 0,
+                 limit: int = 100,
+                 minimum_last_changed_date: date = None,
+                 first_name: str = None,
                  last_name: str = None,
                  db: Session = Depends(get_db)
                  ):
@@ -37,7 +68,13 @@ def read_players(skip: int = 0,
                 last_name=last_name)
     return players
 
-@app.get("/v0/players/{player_id}", response_model=schemas.Player)
+@app.get("/v0/players/{player_id}",
+         response_model=schemas.Player,
+         tags=["player"],
+         summary="Get one player using the Player ID, which is internal to SWC",
+         description="If you have an SWC Player ID of a player from another API call such as v0_get_players, you can call this API using the player ID",
+         response_description="One NFL player",
+         operation_id="v0_get_players_by_player_id")
 def read_player(player_id: int, 
                 db: Session = Depends(get_db)):
     player = crud.get_player(db, 
@@ -48,7 +85,8 @@ def read_player(player_id: int,
     return player
 
 @app.get("/v0/performances/", 
-         response_model=list[schemas.Performance])
+         response_model=list[schemas.Performance],
+         tags=["scoring"])
 def read_performances(skip: int = 0, 
                 limit: int = 100, 
                 minimum_last_changed_date: date = None, 
@@ -59,7 +97,7 @@ def read_performances(skip: int = 0,
                 min_last_changed_date=minimum_last_changed_date)
     return performances
 
-@app.get("/v0/leagues/{league_id}", response_model=schemas.League)
+@app.get("/v0/leagues/{league_id}", response_model=schemas.League, tags=["membership"])
 def read_league(league_id: int,db: Session = Depends(get_db)):
     league = crud.get_league(db, league_id = league_id)
     if league is None:
@@ -67,7 +105,7 @@ def read_league(league_id: int,db: Session = Depends(get_db)):
     return league
 
 
-@app.get("/v0/leagues/", response_model=list[schemas.League])
+@app.get("/v0/leagues/", response_model=list[schemas.League], tags=["membership"])
 def read_leagues(skip: int = 0, 
                 limit: int = 100, 
                 minimum_last_changed_date: date = None, 
@@ -80,7 +118,7 @@ def read_leagues(skip: int = 0,
                 league_name=league_name)
     return leagues
 
-@app.get("/v0/teams/", response_model=list[schemas.Team])
+@app.get("/v0/teams/", response_model=list[schemas.Team], tags=["membership"])
 def read_teams(skip: int = 0, 
                limit: int = 100, 
                minimum_last_changed_date: date = None, 
@@ -96,7 +134,7 @@ def read_teams(skip: int = 0,
     return teams
 
 
-@app.get("/v0/counts/", response_model=schemas.Counts)
+@app.get("/v0/counts/", response_model=schemas.Counts,tags=["analytics"])
 def get_count(db: Session = Depends(get_db)):
     counts = schemas.Counts(
         league_count = crud.get_league_count(db),
