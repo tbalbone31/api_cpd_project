@@ -1,5 +1,5 @@
 """FastAPI program - Chapter 4"""
-from fastapi import Depends, FastAPI, HTTPException
+from fastapi import Depends, FastAPI, HTTPException, Query
 from sqlalchemy.orm import Session
 from datetime import date
 
@@ -52,20 +52,23 @@ async def root():
          tags=["player"],
          summary="Get a list of NFL players",
          description="Retrieve a list of NFL players with optional filtering by various parameters.",
-         operation_id="v0_get_players")
-def read_players(skip: int = 0,
-                 limit: int = 100,
-                 minimum_last_changed_date: date = None,
-                 first_name: str = None,
-                 last_name: str = None,
-                 db: Session = Depends(get_db)
-                 ):
+         operation_id="v0_get_players"
+         )
+def read_players(
+    skip: int = Query(0, description="The number of items to skip at the beginning of API call."),
+    limit: int = Query(100, description="The number of records to return after the skipped records."),
+    minimum_last_changed_date: date = Query(None, description="The minimum date of change that you want to return records. Exclude any records changed before this."),
+    first_name: str = Query(None, description="The first name of the players to return"),
+    last_name: str = Query(None, description="The last name of the players to return"),
+        db: Session = Depends(get_db)):
+
     players = crud.get_players(db, 
                 skip=skip, 
                 limit=limit, 
                 min_last_changed_date=minimum_last_changed_date, 
                 first_name=first_name, 
                 last_name=last_name)
+    
     return players
 
 @app.get("/v0/players/{player_id}",
@@ -74,7 +77,8 @@ def read_players(skip: int = 0,
          summary="Get one player using the Player ID, which is internal to SWC",
          description="If you have an SWC Player ID of a player from another API call such as v0_get_players, you can call this API using the player ID",
          response_description="One NFL player",
-         operation_id="v0_get_players_by_player_id")
+         operation_id="v0_get_players_by_player_id"
+         )
 def read_player(player_id: int, 
                 db: Session = Depends(get_db)):
     player = crud.get_player(db, 
@@ -90,15 +94,24 @@ def read_player(player_id: int,
          summary="Get a list of NFL player performances",
          description="Retrieve a list of NFL player performances with optional filtering by various parameters.",
          response_description="A list of NFL player performances",
-         operation_id="v0_get_performances")
-def read_performances(skip: int = 0, 
-                limit: int = 100, 
-                minimum_last_changed_date: date = None, 
-                db: Session = Depends(get_db)):
-    performances = crud.get_performances(db, 
-                skip=skip, 
-                limit=limit, 
-                min_last_changed_date=minimum_last_changed_date)
+         operation_id="v0_get_performances"
+         )
+def read_performances(
+    skip: int = Query(
+        0, description="The number of items to skip at the beginning of API call."
+    ),
+    limit: int = Query(
+        100, description="The number of records to return after the skipped records."
+    ),
+    minimum_last_changed_date: date = Query(
+        None,
+        description="The minimum data of change that you want to return records. Exclude any records changed before this.",
+    ),
+    db: Session = Depends(get_db),
+):
+    performances = crud.get_performances(
+        db, skip=skip, limit=limit, min_last_changed_date=minimum_last_changed_date
+    )
     return performances
 
 @app.get("/v0/leagues/{league_id}",
@@ -121,17 +134,31 @@ def read_league(league_id: int, db: Session = Depends(get_db)):
          summary="Get a list of SWC leagues",
          description="Retrieve a list of SWC leagues with optional filtering by various parameters.",
          response_description="A list of SWC leagues",
-         operation_id="v0_get_leagues")
-def read_leagues(skip: int = 0, 
-                limit: int = 100, 
-                minimum_last_changed_date: date = None, 
-                league_name: str = None,
-                db: Session = Depends(get_db)):
-    leagues = crud.get_leagues(db, 
-                skip=skip, 
-                limit=limit, 
-                min_last_changed_date=minimum_last_changed_date, 
-                league_name=league_name)
+         operation_id="v0_get_leagues"
+         )
+def read_leagues(
+    skip: int = Query(
+        0, description="The number of items to skip at the beginning of API call."
+    ),
+    limit: int = Query(
+        100, description="The number of records to return after the skipped records."
+    ),
+    minimum_last_changed_date: date = Query(
+        None,
+        description="The minimum data of change that you want to return records. Exclude any records changed before this.",
+    ),
+    league_name: str = Query(
+        None, description="Name of the leagues to return. Not unique in the SWC."
+    ),
+    db: Session = Depends(get_db),
+):
+    leagues = crud.get_leagues(
+        db,
+        skip=skip,
+        limit=limit,
+        min_last_changed_date=minimum_last_changed_date,
+        league_name=league_name,
+    )
     return leagues
 
 @app.get("/v0/teams/",
@@ -140,19 +167,36 @@ def read_leagues(skip: int = 0,
          summary="Get a list of SWC teams",
          description="Retrieve a list of SWC teams with optional filtering by various parameters.",
          response_description="A list of SWC teams",
-         operation_id="v0_get_teams")
-def read_teams(skip: int = 0, 
-               limit: int = 100, 
-               minimum_last_changed_date: date = None, 
-               team_name: str = None, 
-               league_id: int = None, 
-               db: Session = Depends(get_db)):
-    teams = crud.get_teams(db, 
-                skip=skip, 
-                limit=limit, 
-                min_last_changed_date=minimum_last_changed_date, 
-                team_name=team_name,
-                league_id=league_id)
+         operation_id="v0_get_teams"
+         )
+def read_teams(
+    skip: int = Query(
+        0, description="The number of items to skip at the beginning of API call."
+    ),
+    limit: int = Query(
+        100, description="The number of records to return after the skipped records."
+    ),
+    minimum_last_changed_date: date = Query(
+        None,
+        description="The minimum data of change that you want to return records. Exclude any records changed before this.",
+    ),
+    team_name: str = Query(
+        None,
+        description="Name of the teams to return. Not unique across SWC, but is unique inside a league.",
+    ),
+    league_id: int = Query(
+        None, description="League ID of the teams to return. Unique in SWC."
+    ),
+    db: Session = Depends(get_db),
+):
+    teams = crud.get_teams(
+        db,
+        skip=skip,
+        limit=limit,
+        min_last_changed_date=minimum_last_changed_date,
+        team_name=team_name,
+        league_id=league_id,
+    )
     return teams
 
 
