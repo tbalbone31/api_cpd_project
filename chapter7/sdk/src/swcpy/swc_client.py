@@ -26,6 +26,8 @@ class SWCClient:
     LIST_TEAMS_ENDPOINT = "/v0/teams/"
     GET_COUNTS_ENDPOINT = "/v0/counts/"
 
+    # TODO: Continue to add in example code from book
+
     def __init__(self, swc_base_url: str):
         self.swc_base_url = swc_base_url
 
